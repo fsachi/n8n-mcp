@@ -1,0 +1,56 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    stdin_open: true # Equivale a -i
+    tty: true # Equivale a -t
+
+  n8n_mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+    container_name: n8n_mcp
+    restart: unless-stopped
+    environment:
+      MCP_MODE: ${MCP_MODE:-http}
+      AUTH_TOKEN: ${AUTH_TOKEN:?AUTH_TOKEN is required}
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PORT: ${PORT:-3000}
+    volumes:
+      - n8n_mcp_data:/app/data
+
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "curl -f http://127.0.0.1:$${PORT:-3000}/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:lts
+    ports:
+      #      - "8000:8000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+      - /etc/letsencrypt/:/etc/letsencrypt/
+    restart: always
+
+volumes:
+  n8n_data:
+    external: true
+    name: n8n_data
+  n8n_mcp_data:
+    external: true
+    name: n8n_mcp_data
+  portainer_data:
+    external: true
+    name: portainer_data
