@@ -1,0 +1,28 @@
+services:
+
+  n8n_mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+    container_name: n8n_mcp
+    restart: unless-stopped
+    environment:
+      MCP_MODE: ${MCP_MODE:-http}
+      AUTH_TOKEN: ${AUTH_TOKEN:?AUTH_TOKEN is required}
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PORT: ${PORT:-3000}
+    volumes:
+      - n8n_mcp_data:/app/data
+
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "curl -f http://127.0.0.1:$${PORT:-3000}/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  n8n_mcp_data:
+    external: true
+    name: n8n_mcp_data
